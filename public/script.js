@@ -1,8 +1,17 @@
 let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
+// Determine API base URL - works for both local and production
+const API_URL = window.location.hostname === 'localhost' 
+  ? 'http://localhost:3000'
+  : window.location.origin;
+
+console.log("🔗 Using API URL:", API_URL);
+
 async function fetchProducts() {
   try {
-    const response = await fetch("http://localhost:3000/api/products");
+    const url = `${API_URL}/api/products`;
+    console.log("📡 Fetching from:", url);
+    const response = await fetch(url);
     console.log("Response status:", response.status);
     console.log("Response headers:", response.headers.get("Content-Type"));
     if (!response.ok) {
