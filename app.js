@@ -1,7 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 const TelegramBot = require("node-telegram-bot-api");
-const sqlite3 = require("sqlite3").verbose();
+const Database = require("better-sqlite3");
 const fs = require("fs");
 const path = require("path");
 const cors = require("cors");
@@ -41,16 +41,13 @@ if (!fs.existsSync(PUBLIC_DIR)) {
 // ============================================
 // DATABASE CONNECTION
 // ============================================
-const db = new sqlite3.Database("./database.db", (err) => {
-  if (err) {
-    console.error("Error connecting to SQLite database:", err.message);
-    return;
-  }
+let db;
+try {
+  db = new Database("./database.db");
   console.log("✅ Connected to SQLite database.");
 
   // Create products table
-  db.run(
-    `
+  db.exec(`
     CREATE TABLE IF NOT EXISTS products (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -58,63 +55,54 @@ const db = new sqlite3.Database("./database.db", (err) => {
       image TEXT NOT NULL,
       weight REAL NOT NULL
     )
-  `,
-    (err) => {
-      if (err) {
-        console.error("Error creating table:", err.message);
-        return;
+  `);
+  console.log("✅ Products table created or already exists.");
+
+  // Initial data insertion (only if table is empty)
+  const countResult = db.prepare("SELECT COUNT(*) as count FROM products").get();
+  
+  if (countResult.count === 0) {
+    const initialProducts = [
+      { name: "Gold Ring", price: 500, image: "rijng.webp", weight: 300 },
+      {
+        name: "Luxury Necklace",
+        price: 1200,
+        image: "necklace.jpg",
+        weight: 250,
+      },
+      {
+        name: "Golden Bracelet",
+        price: 850,
+        image: "goldenbraslet.avif",
+        weight: 500,
+      },
+      {
+        name: "Gold Earrings",
+        price: 1500,
+        image: "goldearings.jpg",
+        weight: 100,
+      },
+    ];
+
+    const insertStmt = db.prepare(
+      "INSERT INTO products (name, price, image, weight) VALUES (?, ?, ?, ?)"
+    );
+
+    initialProducts.forEach((product) => {
+      try {
+        insertStmt.run(product.name, product.price, product.image, product.weight);
+        console.log(`✅ Inserted ${product.name} into products table.`);
+      } catch (err) {
+        console.error("Error inserting initial data:", err.message);
       }
-      console.log("✅ Products table created or already exists.");
-
-      // Initial data insertion (only if table is empty)
-      db.get("SELECT COUNT(*) as count FROM products", (err, row) => {
-        if (err) {
-          console.error("Error checking table count:", err.message);
-          return;
-        }
-        if (row.count === 0) {
-          const initialProducts = [
-            { name: "Gold Ring", price: 500, image: "rijng.webp", weight: 300 },
-            {
-              name: "Luxury Necklace",
-              price: 1200,
-              image: "necklace.jpg",
-              weight: 250,
-            },
-            {
-              name: "Golden Bracelet",
-              price: 850,
-              image: "goldenbraslet.avif",
-              weight: 500,
-            },
-            {
-              name: "Gold Earrings",
-              price: 1500,
-              image: "goldearings.jpg",
-              weight: 100,
-            },
-          ];
-
-          initialProducts.forEach((product) => {
-            db.run(
-              `INSERT INTO products (name, price, image, weight) VALUES (?, ?, ?, ?)`,
-              [product.name, product.price, product.image, product.weight],
-              (err) => {
-                if (err) {
-                  console.error("Error inserting initial data:", err.message);
-                } else {
-                  console.log(`✅ Inserted ${product.name} into products table.`);
-                }
-              }
-            );
-          });
-        } else {
-          console.log("✅ Products table already contains data.");
-        }
-      });
-    }
-  );
-});
+    });
+  } else {
+    console.log("✅ Products table already contains data.");
+  }
+} catch (error) {
+  console.error("Error connecting to database:", error.message);
+  process.exit(1);
+}
 
 // ============================================
 // TELEGRAM BOT - USER SESSIONS
@@ -164,37 +152,31 @@ bot.on("message", async (msg) => {
 
   if (session.step === "delete") {
     const productName = msg.text;
-    db.get(
-      "SELECT image FROM products WHERE name = ?",
-      [productName],
-      (err, row) => {
-        if (err) {
-          console.error("Error finding product:", err.message);
-          bot.sendMessage(chatId, "Error finding the product.");
-          return;
-        }
-        if (!row) {
-          bot.sendMessage(chatId, "❌ Product not found.");
-          return;
-        }
+    try {
+      const stmt = db.prepare("SELECT image FROM products WHERE name = ?");
+      const row = stmt.get(productName);
 
-        const imagePath = path.join(PUBLIC_DIR, row.image);
-
-        // Delete product from database
-        db.run("DELETE FROM products WHERE name = ?", [productName], (err) => {
-          if (err) {
-            console.error("Error deleting product:", err.message);
-            bot.sendMessage(chatId, "Error deleting product.");
-          } else {
-            // Delete the image file
-            if (fs.existsSync(imagePath)) {
-              fs.unlinkSync(imagePath);
-            }
-            bot.sendMessage(chatId, "✅ Product deleted successfully!");
-          }
-        });
+      if (!row) {
+        bot.sendMessage(chatId, "❌ Product not found.");
+        delete userSessions[chatId];
+        return;
       }
-    );
+
+      const imagePath = path.join(PUBLIC_DIR, row.image);
+
+      // Delete product from database
+      const deleteStmt = db.prepare("DELETE FROM products WHERE name = ?");
+      deleteStmt.run(productName);
+
+      // Delete the image file
+      if (fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath);
+      }
+      bot.sendMessage(chatId, "✅ Product deleted successfully!");
+    } catch (error) {
+      console.error("Error deleting product:", error.message);
+      bot.sendMessage(chatId, "Error deleting product.");
+    }
     delete userSessions[chatId];
   }
 });
@@ -221,18 +203,12 @@ bot.on("photo", async (msg) => {
     fs.writeFileSync(filePath, Buffer.from(buffer));
 
     // Save product data to database
-    db.run(
-      `INSERT INTO products (name, price, image, weight) VALUES (?, ?, ?, ?)`,
-      [session.name, session.price, fileName, session.weight],
-      (err) => {
-        if (err) {
-          console.error("Error inserting data:", err.message);
-          bot.sendMessage(chatId, "Error saving product.");
-        } else {
-          bot.sendMessage(chatId, "✅ Product added successfully!");
-        }
-      }
+    const insertStmt = db.prepare(
+      "INSERT INTO products (name, price, image, weight) VALUES (?, ?, ?, ?)"
     );
+    insertStmt.run(session.name, session.price, fileName, session.weight);
+
+    bot.sendMessage(chatId, "✅ Product added successfully!");
 
     // Clear session
     delete userSessions[chatId];
@@ -257,15 +233,15 @@ bot.onText(/\/deleteproduct/, (msg) => {
 
 // Get all products
 app.get("/api/products", (req, res) => {
-  db.all("SELECT * FROM products", [], (err, rows) => {
-    if (err) {
-      console.error("Error fetching products:", err.message);
-      res.status(500).json({ error: err.message });
-      return;
-    }
+  try {
+    const stmt = db.prepare("SELECT * FROM products");
+    const rows = stmt.all();
     res.setHeader("Content-Type", "application/json");
     res.json(rows);
-  });
+  } catch (error) {
+    console.error("Error fetching products:", error.message);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // ============================================
@@ -281,11 +257,11 @@ app.listen(port, () => {
 // ============================================
 process.on("SIGINT", () => {
   console.log("\nShutting down gracefully...");
-  db.close((err) => {
-    if (err) {
-      console.error("Error closing database:", err.message);
-    }
+  try {
+    db.close();
     console.log("✅ Database connection closed.");
-    process.exit(0);
-  });
+  } catch (error) {
+    console.error("Error closing database:", error.message);
+  }
+  process.exit(0);
 });
