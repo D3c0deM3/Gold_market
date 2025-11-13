@@ -251,5 +251,23 @@ async function loadProducts() {
 }
 
 // Initial load
-loadProducts();
-updateCart();
+document.addEventListener('DOMContentLoaded', function() {
+  console.log("🔄 Page loaded, initializing...");
+  loadProducts();
+  updateCart();
+});
+
+// Fallback for if DOMContentLoaded already fired
+if (document.readyState === 'loading') {
+  // Still loading
+  document.addEventListener('DOMContentLoaded', function() {
+    console.log("🔄 DOMContentLoaded fired");
+    loadProducts();
+    updateCart();
+  });
+} else {
+  // Already loaded
+  console.log("🔄 Document already loaded, initializing immediately");
+  loadProducts();
+  updateCart();
+}
