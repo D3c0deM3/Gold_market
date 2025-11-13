@@ -56,6 +56,41 @@ Your app will be available at: `https://gold-market.onrender.com`
 - Visit: `https://gold-market.onrender.com` (frontend)
 - Check API: `https://gold-market.onrender.com/api/products`
 
+## ⚠️ Important: Telegram Bot Polling Conflicts
+
+The app uses Telegram bot **polling** which connects to Telegram to get updates. Telegram only allows **ONE active connection per bot token at a time**.
+
+### Common Error:
+```
+ETELEGRAM: 409 Conflict: terminated by other getUpdates request; 
+make sure that only one bot instance is running
+```
+
+### Solutions:
+
+#### Option 1: Run EITHER Local OR Render (Not Both)
+- Stop local app before deploying to Render
+- Stop Render before running locally
+
+```powershell
+# Kill all Node processes on Windows
+Get-Process node -ErrorAction SilentlyContinue | Stop-Process -Force
+```
+
+#### Option 2: Use Two Different Bot Tokens (Recommended for Development)
+Create separate bots for development and production:
+
+1. **Production Bot** (use on Render):
+   - Token: `7593096494:AAG7GWaVEPgeVSpWbSuZQzTJAJsfLtb48PA`
+   - In Render env: `BOT_TOKEN=7593096494:AAG7GWaVEPgeVSpWbSuZQzTJAJsfLtb48PA`
+
+2. **Development Bot** (use locally):
+   - Create a new bot: Talk to `@BotFather` on Telegram → `/newbot`
+   - Get your token
+   - In `.env`: `BOT_TOKEN=YOUR_LOCAL_BOT_TOKEN`
+
+This way you can run both local and production simultaneously without conflicts!
+
 ## Important Notes
 
 ### ⚠️ Database Persistence

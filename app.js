@@ -31,6 +31,25 @@ app.use("/images", express.static(path.join(__dirname, "public/images")));
 // ============================================
 const bot = new TelegramBot(BOT_TOKEN, { polling: true });
 
+// Handle bot polling errors
+bot.on("polling_error", (err) => {
+  if (err.code === "ETELEGRAM") {
+    console.error("❌ Telegram Bot Error:", err.message);
+    if (err.message.includes("409 Conflict")) {
+      console.error("⚠️  Multiple bot instances detected!");
+      console.error("💡 Make sure only ONE instance is running at a time.");
+      console.error("   - Stop local app before deploying to Render");
+      console.error("   - Or use different BOT_TOKEN for development vs production");
+    }
+  } else {
+    console.error("❌ Polling error:", err);
+  }
+});
+
+bot.on("error", (err) => {
+  console.error("❌ Bot error:", err);
+});
+
 // ============================================
 // ENSURE PUBLIC DIRECTORY EXISTS
 // ============================================
