@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: gold-market
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: BOT_TOKEN
+        value: 7593096494:AAG7GWaVEPgeVSpWbSuZQzTJAJsfLtb48PA

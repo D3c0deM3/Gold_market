@@ -2,12 +2,13 @@
   "name": "luxury-gold",
   "version": "1.0.0",
   "description": "Luxury Gold Market",
-  "main": "server.js",
+  "main": "app.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node app.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
     "express": "^4.17.1",
     "fs": "^0.0.1-security",
     "node-fetch": "^3.3.2",
