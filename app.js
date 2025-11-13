@@ -11,7 +11,8 @@ const fetch = (...args) =>
 // ============================================
 // CONFIGURATION
 // ============================================
-const BOT_TOKEN = process.env.BOT_TOKEN || "7593096494:AAG7GWaVEPgeVSpWbSuZQzTJAJsfLtb48PA";
+const BOT_TOKEN =
+  process.env.BOT_TOKEN || "8549486337:AAEk0SOdEZ1Am13alrpYFegj-0S-uUtqbTo";
 const PUBLIC_DIR = path.join(__dirname, "public");
 const port = process.env.PORT || 3000;
 
@@ -39,7 +40,9 @@ bot.on("polling_error", (err) => {
       console.error("⚠️  Multiple bot instances detected!");
       console.error("💡 Make sure only ONE instance is running at a time.");
       console.error("   - Stop local app before deploying to Render");
-      console.error("   - Or use different BOT_TOKEN for development vs production");
+      console.error(
+        "   - Or use different BOT_TOKEN for development vs production"
+      );
     }
   } else {
     console.error("❌ Polling error:", err);
@@ -78,8 +81,10 @@ try {
   console.log("✅ Products table created or already exists.");
 
   // Initial data insertion (only if table is empty)
-  const countResult = db.prepare("SELECT COUNT(*) as count FROM products").get();
-  
+  const countResult = db
+    .prepare("SELECT COUNT(*) as count FROM products")
+    .get();
+
   if (countResult.count === 0) {
     const initialProducts = [
       { name: "Gold Ring", price: 500, image: "rijng.webp", weight: 300 },
@@ -109,7 +114,12 @@ try {
 
     initialProducts.forEach((product) => {
       try {
-        insertStmt.run(product.name, product.price, product.image, product.weight);
+        insertStmt.run(
+          product.name,
+          product.price,
+          product.image,
+          product.weight
+        );
         console.log(`✅ Inserted ${product.name} into products table.`);
       } catch (err) {
         console.error("Error inserting initial data:", err.message);
@@ -255,13 +265,15 @@ app.get("/api/products", (req, res) => {
   try {
     const stmt = db.prepare("SELECT * FROM products");
     let rows = stmt.all();
-    
+
     // Add proper image URL paths if they're not absolute URLs
-    rows = rows.map(product => ({
+    rows = rows.map((product) => ({
       ...product,
-      image: product.image.startsWith('http') ? product.image : `/${product.image}`
+      image: product.image.startsWith("http")
+        ? product.image
+        : `/${product.image}`,
     }));
-    
+
     console.log("📦 Fetched products:", rows);
     res.setHeader("Content-Type", "application/json");
     res.json(rows);

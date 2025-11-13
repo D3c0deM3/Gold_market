@@ -1,9 +1,10 @@
 let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
 // Determine API base URL - works for both local and production
-const API_URL = window.location.hostname === 'localhost' 
-  ? 'http://localhost:3000'
-  : window.location.origin;
+const API_URL =
+  window.location.hostname === "localhost"
+    ? "http://localhost:3000"
+    : window.location.origin;
 
 console.log("🔗 Using API URL:", API_URL);
 
@@ -210,13 +211,14 @@ async function loadProducts() {
   const products = await fetchProducts();
   const productList = document.getElementById("product-list");
   productList.innerHTML = "";
-  
+
   if (products.length === 0) {
-    productList.innerHTML = "<p style='text-align: center; color: red;'>❌ No products found. Check server logs.</p>";
+    productList.innerHTML =
+      "<p style='text-align: center; color: red;'>❌ No products found. Check server logs.</p>";
     console.warn("⚠️ No products returned from API");
     return;
   }
-  
+
   console.log("🔄 Loading", products.length, "products");
   products.forEach((product, index) => {
     const productElement = document.createElement("div");
@@ -260,16 +262,16 @@ async function loadProducts() {
 }
 
 // Initial load
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener("DOMContentLoaded", function () {
   console.log("🔄 Page loaded, initializing...");
   loadProducts();
   updateCart();
 });
 
 // Fallback for if DOMContentLoaded already fired
-if (document.readyState === 'loading') {
+if (document.readyState === "loading") {
   // Still loading
-  document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener("DOMContentLoaded", function () {
     console.log("🔄 DOMContentLoaded fired");
     loadProducts();
     updateCart();

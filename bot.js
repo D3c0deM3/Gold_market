@@ -6,7 +6,7 @@ const fetch = (...args) =>
   import("node-fetch").then(({ default: fetch }) => fetch(...args));
 
 // Bot Token & Public Directory Path
-const BOT_TOKEN = "7593096494:AAG7GWaVEPgeVSpWbSuZQzTJAJsfLtb48PA";
+const BOT_TOKEN = "8549486337:AAEk0SOdEZ1Am13alrpYFegj-0S-uUtqbTo";
 const PUBLIC_DIR = path.join(__dirname, "public"); // Save directly to public/
 const bot = new TelegramBot(BOT_TOKEN, { polling: true });
 
