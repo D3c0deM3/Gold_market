@@ -254,7 +254,15 @@ bot.onText(/\/deleteproduct/, (msg) => {
 app.get("/api/products", (req, res) => {
   try {
     const stmt = db.prepare("SELECT * FROM products");
-    const rows = stmt.all();
+    let rows = stmt.all();
+    
+    // Add proper image URL paths if they're not absolute URLs
+    rows = rows.map(product => ({
+      ...product,
+      image: product.image.startsWith('http') ? product.image : `/${product.image}`
+    }));
+    
+    console.log("📦 Fetched products:", rows);
     res.setHeader("Content-Type", "application/json");
     res.json(rows);
   } catch (error) {

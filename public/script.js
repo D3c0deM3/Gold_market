@@ -12,9 +12,11 @@ async function fetchProducts() {
     console.log("Raw response:", text);
     const trimmedText = text.trim();
     const products = JSON.parse(trimmedText);
+    console.log("✅ Parsed products:", products);
     return products;
   } catch (error) {
     console.error("Error fetching products:", error);
+    alert("Failed to load products. Make sure the server is running!");
     return [];
   }
 }
@@ -199,12 +201,20 @@ async function loadProducts() {
   const products = await fetchProducts();
   const productList = document.getElementById("product-list");
   productList.innerHTML = "";
+  
+  if (products.length === 0) {
+    productList.innerHTML = "<p style='text-align: center; color: red;'>❌ No products found. Check server logs.</p>";
+    console.warn("⚠️ No products returned from API");
+    return;
+  }
+  
+  console.log("🔄 Loading", products.length, "products");
   products.forEach((product, index) => {
     const productElement = document.createElement("div");
     productElement.classList.add("product");
     productElement.setAttribute("data-product", JSON.stringify(product));
     productElement.innerHTML = `
-      <img src="${product.image}" alt="${product.name}">
+      <img src="${product.image}" alt="${product.name}" onerror="console.error('Image failed to load:', '${product.image}')">
       <h3>${product.name}</h3>
       <p>$${product.price}</p>
       <button class="add-to-cart-btn">Add to Cart</button>
