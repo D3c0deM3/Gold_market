@@ -179,7 +179,7 @@ function checkout() {
 
     // Send the message to Telegram
     const botToken = "7593096494:AAG7GWaVEPgeVSpWbSuZQzTJAJsfLtb48PA";
-    const chatId = "1508120182";
+    const chatId = "764168975";
     const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
 
     fetch(url, {
